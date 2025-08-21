@@ -51,6 +51,27 @@
         #userIdDisplay {
             word-break: break-all;
         }
+        /* Style for the attendance button and spinner */
+        .attendance-button {
+            transition: all 0.3s ease-in-out;
+            transform: scale(1);
+        }
+        .attendance-button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 1.5rem;
+            height: 1.5rem;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
@@ -63,140 +84,147 @@
             <p class="text-sm text-gray-400 mt-2">আপনার ইউজার আইডি: <span id="userIdDisplay" class="font-mono text-xs">Loading...</span></p>
         </header>
 
-        <!-- Tab Navigation -->
-        <div class="flex border-b border-gray-300 dark:border-gray-700 mb-8 overflow-x-auto whitespace-nowrap">
-            <button class="tab-button active flex-1 py-4 px-2 text-center text-sm md:text-base transition-colors duration-300">উপস্থিতি</button>
-            <button class="tab-button flex-1 py-4 px-2 text-center text-sm md:text-base transition-colors duration-300">অর্ডার</button>
-            <button class="tab-button flex-1 py-4 px-2 text-center text-sm md:text-base transition-colors duration-300">কালেকশন</button>
-            <button class="tab-button flex-1 py-4 px-2 text-center text-sm md:text-base transition-colors duration-300">সেলস</button>
-            <button class="tab-button flex-1 py-4 px-2 text-center text-sm md:text-base transition-colors duration-300">নোটিফিকেশন</button>
-            <button class="tab-button flex-1 py-4 px-2 text-center text-sm md:text-base transition-colors duration-300">সেটিংস</button>
+        <!-- Main Panel Content - Initially hidden until attendance is marked -->
+        <div id="mainContent" class="hidden">
+            <!-- Tab Navigation -->
+            <div class="flex border-b border-gray-300 dark:border-gray-700 mb-8 overflow-x-auto whitespace-nowrap">
+                <button class="tab-button active flex-1 py-4 px-2 text-center text-sm md:text-base transition-colors duration-300">উপস্থিতি</button>
+                <button class="tab-button flex-1 py-4 px-2 text-center text-sm md:text-base transition-colors duration-300">অর্ডার</button>
+                <button class="tab-button flex-1 py-4 px-2 text-center text-sm md:text-base transition-colors duration-300">কালেকশন</button>
+                <button class="tab-button flex-1 py-4 px-2 text-center text-sm md:text-base transition-colors duration-300">সেলস</button>
+                <button class="tab-button flex-1 py-4 px-2 text-center text-sm md:text-base transition-colors duration-300">নোটিফিকেশন</button>
+                <button class="tab-button flex-1 py-4 px-2 text-center text-sm md:text-base transition-colors duration-300">সেটিংস</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tabContent">
+                <!-- 1. Attendance Management Section -->
+                <div class="tab-pane p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">উপস্থিতি ব্যবস্থাপনা</h2>
+                    <div class="flex flex-col space-y-4">
+                        <div class="border-t border-gray-200 dark:border-gray-600 my-4"></div>
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">মাসিক রিপোর্ট</h3>
+                            <p id="monthlyReport" class="text-sm text-gray-600 dark:text-gray-400">রিপোর্ট লোড হচ্ছে...</p>
+                        </div>
+                        <button id="leaveRequestBtn" class="bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition duration-300 ease-in-out shadow-md dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+                            ছুটির জন্য আবেদন
+                        </button>
+                        <div id="leaveStatus" class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            <!-- Leave status will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Daily Order Submit Section -->
+                <div class="tab-pane hidden p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">দৈনিক অর্ডার সাবমিট</h2>
+                    <button id="newOrderBtn" class="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 ease-in-out shadow-md mb-4">
+                        নতুন অর্ডার যোগ করুন
+                    </button>
+                    <div id="orderList" class="space-y-4">
+                        <!-- Orders will be rendered here -->
+                    </div>
+                    <div id="orderMessage" class="mt-4 text-sm font-medium text-green-600 dark:text-green-400 hidden"></div>
+                </div>
+
+                <!-- 3. Collection Budget Submit Section -->
+                <div class="tab-pane hidden p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">কালেকশন বাজেট সাবমিট</h2>
+                    <form id="collectionForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">টাকার পরিমাণ</label>
+                            <input type="number" id="collectionAmount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-100 dark:bg-gray-700 dark:border-gray-600 p-2" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">পেমেন্ট পদ্ধতি</label>
+                            <select id="collectionMethod" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-100 dark:bg-gray-700 dark:border-gray-600 p-2" required>
+                                <option value="Cash">Cash</option>
+                                <option value="Bank">Bank</option>
+                                <option value="Mobile Banking">Mobile Banking</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">রেফারেন্স নম্বর (ঐচ্ছিক)</label>
+                            <input type="text" id="collectionReference" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-100 dark:bg-gray-700 dark:border-gray-600 p-2">
+                        </div>
+                        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition duration-300 ease-in-out shadow-md">
+                            কালেকশন সাবমিট করুন
+                        </button>
+                    </form>
+                    <div class="mt-6">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">আপনার কালেকশন রিপোর্ট</h3>
+                        <p id="collectionReport" class="text-sm text-gray-600 dark:text-gray-400 mt-2"></p>
+                    </div>
+                </div>
+
+                <!-- 4. Sales Budget Submit Section -->
+                <div class="tab-pane hidden p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">সেলস বাজেট সাবমিট</h2>
+                    <form id="salesForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">আজকের সেলস</label>
+                            <input type="number" id="salesAmount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-100 dark:bg-gray-700 dark:border-gray-600 p-2" required>
+                        </div>
+                        <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-300 ease-in-out shadow-md">
+                            সেলস সাবমিট করুন
+                        </button>
+                    </form>
+                    <div class="mt-6">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">সেলস প্রগ্রেস</h3>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
+                            <div id="salesProgressBar" class="bg-purple-600 h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p id="salesProgressText" class="text-sm text-gray-600 dark:text-gray-400 mt-2">টার্গেট: ৳100000, বর্তমান: ৳0 (0%)</p>
+                    </div>
+                </div>
+
+                <!-- 5. Notifications & Updates Section -->
+                <div class="tab-pane hidden p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">নোটিফিকেশন ও আপডেট</h2>
+                    <ul id="notificationList" class="space-y-4">
+                        <!-- Notifications will be rendered here -->
+                    </ul>
+                </div>
+
+                <!-- 6. Profile & Settings Section -->
+                <div class="tab-pane hidden p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">প্রোফাইল ও সেটিংস</h2>
+                    <div class="flex flex-col space-y-4">
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-lg text-gray-900 dark:text-white">থিম পরিবর্তন</span>
+                            <label for="themeToggle" class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="themeToggle" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                                <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300"></span>
+                            </label>
+                        </div>
+                        <button class="bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition duration-300 ease-in-out shadow-md dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+                            প্রোফাইল আপডেট করুন
+                        </button>
+                        <button class="bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition duration-300 ease-in-out shadow-md dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+                            পাসওয়ার্ড পরিবর্তন করুন
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Tab Content -->
-        <div id="tabContent">
-
-            <!-- 1. Attendance Management Section -->
-            <div class="tab-pane p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                <h2 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">উপস্থিতি ব্যবস্থাপনা</h2>
-                <div class="flex flex-col space-y-4">
-                    <!-- Live Camera Section -->
-                    <div class="flex flex-col items-center justify-center space-y-4">
-                        <video id="cameraFeed" class="w-full h-auto max-w-sm rounded-lg border border-gray-300 dark:border-gray-600 hidden" autoplay></video>
-                        <canvas id="cameraCanvas" class="hidden"></canvas>
-                        <button id="startCameraBtn" class="bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300 ease-in-out shadow-md">
-                            ক্যামেরা চালু করুন
-                        </button>
-                        <button id="captureAttendanceBtn" class="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 ease-in-out shadow-md hidden">
-                            ক্যাপচার ও উপস্থিতি মার্ক করুন
-                        </button>
-                    </div>
-
-                    <div id="attendanceStatus" class="text-center text-sm font-medium text-gray-600 dark:text-gray-400">
-                        <!-- Attendance status will be displayed here -->
-                    </div>
-                    <div class="border-t border-gray-200 dark:border-gray-600 my-4"></div>
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">মাসিক রিপোর্ট</h3>
-                        <p id="monthlyReport" class="text-sm text-gray-600 dark:text-gray-400">রিপোর্ট লোড হচ্ছে...</p>
-                    </div>
-                    <button id="leaveRequestBtn" class="bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition duration-300 ease-in-out shadow-md dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
-                        ছুটির জন্য আবেদন
-                    </button>
-                    <div id="leaveStatus" class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        <!-- Leave status will be displayed here -->
-                    </div>
+        <!-- Attendance Panel - Always visible first -->
+        <div id="attendancePanel" class="p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700 flex flex-col items-center justify-center space-y-6 max-w-xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">আজকের উপস্থিতি মার্ক করুন</h2>
+            <div class="flex flex-col items-center justify-center space-y-4 w-full">
+                <video id="cameraFeed" class="w-full h-auto max-w-sm rounded-lg border border-gray-300 dark:border-gray-600 hidden" autoplay></video>
+                <canvas id="cameraCanvas" class="hidden"></canvas>
+                <div id="attendanceMessage" class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    অনুগ্রহ করে "ক্যামেরা চালু করুন" বোতামে ক্লিক করুন।
                 </div>
-            </div>
-
-            <!-- 2. Daily Order Submit Section -->
-            <div class="tab-pane hidden p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                <h2 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">দৈনিক অর্ডার সাবমিট</h2>
-                <button id="newOrderBtn" class="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 ease-in-out shadow-md mb-4">
-                    নতুন অর্ডার যোগ করুন
-                </button>
-                <div id="orderList" class="space-y-4">
-                    <!-- Orders will be rendered here -->
-                </div>
-                <div id="orderMessage" class="mt-4 text-sm font-medium text-green-600 dark:text-green-400 hidden"></div>
-            </div>
-
-            <!-- 3. Collection Budget Submit Section -->
-            <div class="tab-pane hidden p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                <h2 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">কালেকশন বাজেট সাবমিট</h2>
-                <form id="collectionForm" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">টাকার পরিমাণ</label>
-                        <input type="number" id="collectionAmount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-100 dark:bg-gray-700 dark:border-gray-600 p-2" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">পেমেন্ট পদ্ধতি</label>
-                        <select id="collectionMethod" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-100 dark:bg-gray-700 dark:border-gray-600 p-2" required>
-                            <option value="Cash">Cash</option>
-                            <option value="Bank">Bank</option>
-                            <option value="Mobile Banking">Mobile Banking</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">রেফারেন্স নম্বর (ঐচ্ছিক)</label>
-                        <input type="text" id="collectionReference" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-100 dark:bg-gray-700 dark:border-gray-600 p-2">
-                    </div>
-                    <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition duration-300 ease-in-out shadow-md">
-                        কালেকশন সাবমিট করুন
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center">
+                    <button id="startCameraBtn" class="attendance-button bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300 ease-in-out shadow-md flex items-center justify-center space-x-2">
+                        <span>ক্যামেরা চালু করুন</span>
                     </button>
-                </form>
-                <div class="mt-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">আপনার কালেকশন রিপোর্ট</h3>
-                    <p id="collectionReport" class="text-sm text-gray-600 dark:text-gray-400 mt-2"></p>
-                </div>
-            </div>
-
-            <!-- 4. Sales Budget Submit Section -->
-            <div class="tab-pane hidden p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                <h2 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">সেলস বাজেট সাবমিট</h2>
-                <form id="salesForm" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">আজকের সেলস</label>
-                        <input type="number" id="salesAmount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-100 dark:bg-gray-700 dark:border-gray-600 p-2" required>
-                    </div>
-                    <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-300 ease-in-out shadow-md">
-                        সেলস সাবমিট করুন
-                    </button>
-                </form>
-                <div class="mt-6">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">সেলস প্রগ্রেস</h3>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
-                        <div id="salesProgressBar" class="bg-purple-600 h-2.5 rounded-full" style="width: 0%"></div>
-                    </div>
-                    <p id="salesProgressText" class="text-sm text-gray-600 dark:text-gray-400 mt-2">টার্গেট: ৳100000, বর্তমান: ৳0 (0%)</p>
-                </div>
-            </div>
-
-            <!-- 5. Notifications & Updates Section -->
-            <div class="tab-pane hidden p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                <h2 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">নোটিফিকেশন ও আপডেট</h2>
-                <ul id="notificationList" class="space-y-4">
-                    <!-- Notifications will be rendered here -->
-                </ul>
-            </div>
-
-            <!-- 6. Profile & Settings Section -->
-            <div class="tab-pane hidden p-6 rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                <h2 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">প্রোফাইল ও সেটিংস</h2>
-                <div class="flex flex-col space-y-4">
-                    <div class="flex justify-between items-center py-2">
-                        <span class="text-lg text-gray-900 dark:text-white">থিম পরিবর্তন</span>
-                        <label for="themeToggle" class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="themeToggle" class="sr-only peer">
-                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                            <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300"></span>
-                        </label>
-                    </div>
-                    <button class="bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition duration-300 ease-in-out shadow-md dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
-                        প্রোফাইল আপডেট করুন
-                    </button>
-                    <button class="bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition duration-300 ease-in-out shadow-md dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
-                        পাসওয়ার্ড পরিবর্তন করুন
+                    <button id="captureAttendanceBtn" class="attendance-button bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 ease-in-out shadow-md hidden flex items-center justify-center space-x-2">
+                        <span>ক্যাপচার ও উপস্থিতি মার্ক করুন</span>
                     </button>
                 </div>
             </div>
@@ -221,10 +249,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, updateDoc, deleteDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, updateDoc, deleteDoc, getDocs, getDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Initialization ---
-        // Access global variables provided by the canvas environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -236,6 +263,8 @@
 
         // UI elements
         const userIdDisplay = document.getElementById('userIdDisplay');
+        const mainContent = document.getElementById('mainContent');
+        const attendancePanel = document.getElementById('attendancePanel');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabPanes = document.querySelectorAll('.tab-pane');
         const body = document.body;
@@ -255,7 +284,7 @@
         let stream = null;
 
         // Attendance elements
-        const attendanceStatus = document.getElementById('attendanceStatus');
+        const attendanceMessage = document.getElementById('attendanceMessage');
         const monthlyReport = document.getElementById('monthlyReport');
         const leaveRequestBtn = document.getElementById('leaveRequestBtn');
         const leaveStatusDiv = document.getElementById('leaveStatus');
@@ -277,7 +306,7 @@
         // Notification elements
         const notificationList = document.getElementById('notificationList');
 
-        // --- Main App Logic ---
+        // --- Core App Logic ---
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 // Initialize Firebase
@@ -298,13 +327,12 @@
                         userId = user.uid;
                         isAuthReady = true;
                         userIdDisplay.textContent = userId;
-                        setupFirestoreListeners();
-                        alertMessage('অ্যাপ্লিকেশন লোড হয়েছে, ডেটাবেস সংযোগ সফল!', 'green');
+                        checkAttendanceAndShowContent();
                     } else {
-                        userId = crypto.randomUUID(); // Fallback for non-authenticated state
+                        userId = crypto.randomUUID();
                         userIdDisplay.textContent = userId;
                         isAuthReady = true;
-                        alertMessage('ব্যবহারকারী প্রমাণীকরণ সফল। ডেটাবেস সংযোগ সম্পন্ন!', 'green');
+                        attendanceMessage.textContent = 'ব্যবহারকারী প্রমাণীকরণ সফল, এখন আপনি উপস্থিতি মার্ক করতে পারেন।';
                     }
                 });
             } catch (error) {
@@ -337,18 +365,50 @@
 
             // --- Feature-specific Logic ---
 
+            // Attendance Check and UI Update
+            const getTodayDateString = () => new Date().toISOString().split('T')[0];
+
+            async function checkAttendanceAndShowContent() {
+                if (!isAuthReady) return;
+                const today = getTodayDateString();
+                const q = query(collection(db, `/artifacts/${appId}/users/${userId}/attendance`), where("dateString", "==", today));
+                
+                // Get the documents once to check for today's attendance
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    // Attendance already marked for today, show main content
+                    showMainContent();
+                } else {
+                    // Attendance not marked, show attendance panel
+                    attendancePanel.classList.remove('hidden');
+                    mainContent.classList.add('hidden');
+                }
+            }
+
+            function showMainContent() {
+                attendancePanel.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                setupFirestoreListeners();
+                alertMessage('উপস্থিতি মার্ক করা হয়েছে। এখন আপনি বাকি ফিচারগুলো ব্যবহার করতে পারবেন!', 'green');
+            }
+            
             // 1. Attendance Management
             startCameraBtn.addEventListener('click', async () => {
                 try {
+                    startCameraBtn.innerHTML = `<div class="spinner"></div>`;
+                    startCameraBtn.disabled = true;
                     stream = await navigator.mediaDevices.getUserMedia({ video: true });
                     cameraFeed.srcObject = stream;
                     cameraFeed.classList.remove('hidden');
                     startCameraBtn.classList.add('hidden');
                     captureAttendanceBtn.classList.remove('hidden');
-                    attendanceStatus.innerHTML = `<span class="text-blue-600 dark:text-blue-400">ক্যামেরা চালু হয়েছে।</span>`;
+                    attendanceMessage.innerHTML = `<span class="text-blue-600 dark:text-blue-400">ক্যামেরা চালু হয়েছে। এখন ক্যাপচার করুন।</span>`;
                 } catch (err) {
-                    attendanceStatus.innerHTML = `<span class="text-red-600 dark:text-red-400">ক্যামেরা অ্যাক্সেস অনুমোদিত নয়।</span>`;
+                    attendanceMessage.innerHTML = `<span class="text-red-600 dark:text-red-400">ক্যামেরা অ্যাক্সেস অনুমোদিত নয়।</span>`;
                     console.error("Camera access denied:", err);
+                    startCameraBtn.innerHTML = `<span>ক্যামেরা চালু করুন</span>`;
+                    startCameraBtn.disabled = false;
                 }
             });
 
@@ -367,19 +427,22 @@
                 cameraFeed.classList.add('hidden');
                 startCameraBtn.classList.remove('hidden');
                 captureAttendanceBtn.classList.add('hidden');
+                startCameraBtn.innerHTML = `<span>ক্যামেরা চালু করুন</span>`;
+                startCameraBtn.disabled = false;
 
                 const now = new Date();
                 const attendanceData = {
-                    date: now.toLocaleDateString('bn-BD'),
+                    dateString: getTodayDateString(),
                     inTime: now.toLocaleTimeString('bn-BD'),
-                    outTime: 'N/A',
+                    outTime: '5:00 PM', // FIXED EXIT TIME - Admin settable
                     capturedImage: capturedImage,
-                    timestamp: new Date()
+                    timestamp: now
                 };
 
                 try {
                     await addDoc(collection(db, `/artifacts/${appId}/users/${userId}/attendance`), attendanceData);
-                    attendanceStatus.innerHTML = `<span class="text-green-600 dark:text-green-400">উপস্থিতি সফলভাবে মার্ক করা হয়েছে!</span><br>সময়: ${getCurrentDateTime()}`;
+                    attendanceMessage.innerHTML = `<span class="text-green-600 dark:text-green-400">উপস্থিতি সফলভাবে মার্ক করা হয়েছে!</span><br>সময়: ${attendanceData.inTime}`;
+                    showMainContent();
                 } catch (e) {
                     console.error("Error adding document: ", e);
                     alertMessage('উপস্থিতি সাবমিট করতে ব্যর্থ।', 'red');
@@ -434,7 +497,6 @@
                 };
 
                 try {
-                    // Check if sales document for today exists to update it
                     const salesDocRef = doc(db, `/artifacts/${appId}/users/${userId}/sales`, 'current');
                     const salesDocSnap = await getDoc(salesDocRef);
                     
